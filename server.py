@@ -76,9 +76,10 @@ class Utilities:
             if client.name is None:
                 continue
             if result == str():
-                result.__add__(client.name)
+                result = result.__add__(client.name)
             else:
-                result.__add__(f",{client.name}")
+                result = result.__add__(f",{client.name}")
+
         return result or None
 
     @staticmethod
@@ -156,7 +157,12 @@ def client_thread(client: Client):
                         client.log(f"Kicking user for bad verification", ERROR.name)
                         client.send_then_disconnect("Error:?")
                         return
-                    client.name = Utilities.handle_argument(message)
+                    name = Utilities.handle_argument(message)
+                    if Utilities.get_user_by_name(name) is not None:
+                        client.log(f"Kicking user for existing name", ERROR.name)
+                        client.send_then_disconnect("Error:Name")
+                        return
+                    client.name = name
                     client.log(f"Verified user as: {client.name}", INFO.name)
                     client.send(f"Verified:{client.name}")
 
@@ -203,6 +209,5 @@ while True:
         user.register_thread(thread)
         user.thread.start()
     except KeyboardInterrupt:
-        conn.close()
         server.close()
         exit(0)
