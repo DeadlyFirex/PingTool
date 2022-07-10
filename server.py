@@ -193,14 +193,16 @@ def client_thread(client: Client):
 
 
 while True:
-    conn, addr = server.accept()
+    try:
+        conn, addr = server.accept()
 
-    user = Client(None, addr, conn)
-    client_list.append(user)
+        user = Client(None, addr, conn)
+        client_list.append(user)
 
-    thread = threading.Thread(target=client_thread, args=(user,), name=f"Client: {addr[0]}")
-    user.register_thread(thread)
-    user.thread.start()
-
-conn.close()
-server.close()
+        thread = threading.Thread(target=client_thread, args=(user,), name=f"Client: {addr[0]}")
+        user.register_thread(thread)
+        user.thread.start()
+    except KeyboardInterrupt:
+        conn.close()
+        server.close()
+        exit(0)
