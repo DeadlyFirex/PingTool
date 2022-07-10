@@ -1,63 +1,62 @@
+import logging
 import socket
 import threading
-import loguru
 
+from datetime import datetime
 from sys import argv
 from typing import Union
-from assets.__init__ import *
 
 
-def PerformLogging(level: Union[str, int], message: Union[str, None]):
+def PerformLogging(logger: Union[logging.Logger, None], level: int, message: Union[str, None]):
     def wrap(f):
         def wrapped_f(*args, **kwargs):
-            loguru.logger.log(level, message or "no message")
-            return f(*args, **kwargs)
+            if logger is None:
+                server_logger.log(level, message or "no message")
+            f(*args, **kwargs)
+
         return wrapped_f
+
     return wrap
 
 
 class Client:
-    @PerformLogging(TRACE.name, "Creating user")
     def __init__(self, name: Union[str, None], address: tuple, connection: socket.socket):
         self.name: Union[str, None] = name
-        self.address: tuple = address
+        self.address: tuple = address,
         self.connection: socket.socket = connection
+        self.logger: Union[logging.Logger, None] = None
         self.thread: Union[threading.Thread, None] = None
 
-    @PerformLogging(TRACE.name, "Sending message")
+    @PerformLogging(None, logging.DEBUG, "Sending message")
     def send(self, message: str):
         self.connection.sendall(message.__add__("\n").encode("utf-8"))
 
-    @PerformLogging(TRACE.name, "Sending message, then disconnecting")
+    @PerformLogging(None, logging.DEBUG, "Sending message, then disconnecting")
     def send_then_disconnect(self, message: str):
         self.connection.sendall(message.__add__("\n").encode("utf-8"))
         self.close_connection()
 
-    @PerformLogging(TRACE.name, "Verifying user")
+    @PerformLogging(None, logging.DEBUG, "Sending message, then disconnecting")
     def verify(self, name: str):
         if name.__len__() > 25:
             self.send_then_disconnect("Error:?")
         self.name = name.split(":")[1].removesuffix("\n")
+        self.logger = logging.getLogger(f"Clients.{self.name}")
 
-    @PerformLogging(TRACE.name, "Disconnecting user")
     def close_connection(self, reason: Union[str, None] = None):
-        loguru.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
+        if self.logger is None:
+            clients_logger.info(f"Manually disconnecting {self.address[0]} for: {reason or 'no reason specified'}")
+        self.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
         if self in client_list:
             client_list.remove(self)
         self.connection.close()
 
-    @PerformLogging(TRACE.name, "Registering thread to client")
     def register_thread(self, thread_address: threading.Thread):
         self.thread = thread_address
-
-    @PerformLogging(TRACE.name, "Logging message")
-    def log(self, message: Union[str, None], level: Union[str, int] = DEBUG.name):
-        loguru.logger.log(level, message)
 
 
 class Utilities:
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching all users")
     def get_all_user_names():
         result = list()
 
@@ -68,7 +67,6 @@ class Utilities:
         return result or None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Raw-fetching all users")
     def get_all_user_names_raw():
         result = str()
 
@@ -82,7 +80,6 @@ class Utilities:
         return result or None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching user by name")
     def get_user_by_name(name: str):
         for client in client_list:
             if client.name == name:
@@ -90,7 +87,6 @@ class Utilities:
         return None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching user by address")
     def get_user_by_address(address: str):
         for client in client_list:
             if client.address == address:
@@ -98,12 +94,10 @@ class Utilities:
         return None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Parsing argument")
     def handle_argument(message: str, delimiter: str = ":"):
         return message.split(delimiter)[1].removesuffix("\n")
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Parsing command")
     def strip_argument(message: str, delimiter: str = ":"):
         return message.split(delimiter)[0].removesuffix("\n")
 
@@ -111,19 +105,10 @@ class Utilities:
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-file_logger = loguru.logger.add(
-    sink=open("logs/main.log", "w"),
-    level="TRACE",
-    rotation="15MB",
-    compression="zip"
-)
-json_logger = loguru.logger.add(
-    sink=open("logs/main.json", "w"),
-    level="TRACE",
-    serialize=True,
-    rotation="20MB",
-    compression="zip"
-)
+server_logger = logging.getLogger("Server")
+clients_logger = logging.getLogger("Clients")
+logging.basicConfig(format=f"[%(levelname)s] [{datetime.now().strftime('%H:%M:%S')}] [%(name)s] - %(message)s",
+                    level=logging.DEBUG)
 client_list = list()
 
 try:
@@ -133,12 +118,11 @@ except IndexError:
     ip_address = socket.gethostbyname(socket.gethostname())
     port = 5001
 
-loguru.logger.info(f"Booting up server on {ip_address}:{port}")
+server_logger.log(logging.CRITICAL, f"Booting up server on {ip_address}:{port}")
 server.bind((ip_address, port))
-server.listen(15)
+server.listen(5)
 
 
-@PerformLogging(TRACE.name, "Created new client thread")
 def client_thread(client: Client):
     connection = client.connection
 
@@ -153,11 +137,12 @@ def client_thread(client: Client):
             if message:
                 if client.name is None:
                     if "Name:" not in message:
-                        client.log(f"Kicking user for bad verification", ERROR.name)
+                        client.logger.error(f"Kicking user for bad verification")
                         client.send_then_disconnect("Error:?")
                         return
                     client.name = Utilities.handle_argument(message)
-                    client.log(f"Verified user as: {client.name}", INFO.name)
+                    client.logger = logging.getLogger(f"Clients.{client.name}")
+                    client.logger.info(f"Verified user as: {client.name}")
                     client.send(f"Verified:{client.name}")
 
                 match Utilities.strip_argument(message):
@@ -168,12 +153,12 @@ def client_thread(client: Client):
                         if target is None:
                             connection.sendall("Error:?\n".encode())
                         else:
-                            client.log(f"Sent ping to {target.name} from {client.name}", INFO.name)
+                            client.logger.info(f"Sent ping to {target.name} from {client.name}")
                             client.send(f"SentPing:{target.name}")
                             target.send(f"ReceivedPing:{client.name}")
                     case "Fetch":
                         result = Utilities.get_all_user_names_raw()
-                        client.log(f"Fetched all users: {result}", INFO.name)
+                        client.logger.info(f"Fetched all users: {result}")
                         client.send(f"Users:{result}")
                     case "Exit":
                         client.send_then_disconnect("Bye:?")
@@ -181,14 +166,16 @@ def client_thread(client: Client):
                     case "Name":
                         pass
                     case _:
-                        client.log(f"Unknown command: {message}", WARNING.name)
+                        client.logger.warning(f"Unknown command: {message}")
                         connection.sendall("Error:?\n".encode())
 
             else:
-                client.close_connection("gracefully disconnecting")
+                client.logger.warning(f"Gracefully disconnecting {client.name}")
+                client.close_connection()
                 return
         except Exception as e:
-            client.close_connection(f"forcefully disconnecting, {e.__str__()}")
+            client.logger.error(f"Force disconnecting {client.name}, due to: {e.__str__()}")
+            client.close_connection()
             return
 
 
