@@ -1,4 +1,4 @@
-[![Python package](https://github.com/DeadlyFirex/OrderServer/actions/workflows/pylint.yml/badge.svg)](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml)
+[![Python package](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml/badge.svg)](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml)
 [![wakatime](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4.svg)](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4)
 ## PingTool
 Small application written in Python, socket-based. to ping annoying colleague's who won't respond.\
