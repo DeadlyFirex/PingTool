@@ -7,4 +7,3 @@ SUCCESS = logger.level("SUCCESS")
 WARNING = logger.level("WARNING")
 ERROR = logger.level("ERROR")
 CRITICAL = logger.level("CRITICAL")
-
