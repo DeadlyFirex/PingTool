@@ -112,13 +112,13 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 file_logger = loguru.logger.add(
-    sink=open("logs/main.log", "w"),
+    sink="logs/main.log",
     level="TRACE",
     rotation="15MB",
     compression="zip"
 )
 json_logger = loguru.logger.add(
-    sink=open("logs/main.json", "w"),
+    sink="logs/main.json",
     level="TRACE",
     serialize=True,
     rotation="20MB",
