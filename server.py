@@ -175,8 +175,8 @@ def client_thread(client: Client):
                             connection.sendall("Error:?\n".encode())
                         else:
                             client.log(f"Sent ping to {target.name} from {client.name}", INFO.name)
-                            client.send(f"SentPing:{target.name}")
-                            target.send(f"ReceivedPing:{client.name}")
+                            client.send(f"S-Ping:{target.name}")
+                            target.send(f"X-Ping:{client.name}")
                     case "Fetch":
                         result = Utilities.get_all_user_names_raw()
                         client.log(f"Fetched all users: {result}", INFO.name)
