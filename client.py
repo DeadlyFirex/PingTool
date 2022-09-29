@@ -94,9 +94,14 @@ try:
     connection = Connection(None, (HOST, PORT), conn)
     connection.verify("Test")
 
+    data = conn.recv(10024).decode('utf-8').removeprefix('\n').removesuffix('\n')
+
+    if data.__contains__("Verified"):
+        loguru.logger.success(f"Successfully verified using name: {connection.name}")
+
     while True:
-        data = conn.recv(1024).decode('utf-8').removeprefix('\n').removesuffix('\n')
-        print(f"RECEIVED: {data.__str__()}")
+        pass
+
 except KeyboardInterrupt:
-        connection.disconnect()
-        exit(0)
+    connection.disconnect()
+    exit(0)
