@@ -84,7 +84,7 @@ try:
                 print(f"<Server> {message}")
 
                 if message.__contains__("X-Ping"):
-                    playsound.playsound("assets/beep.mp3")
+                    playsound("assets/beep.mp3")
             else:
                 message = stdin.readline()
                 connection.send(message)
