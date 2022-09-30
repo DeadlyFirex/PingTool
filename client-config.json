@@ -1,0 +1,7 @@
+{
+  "config": {
+    "host": "localhost",
+    "port": 12500,
+    "user": "default"
+  }
+}
