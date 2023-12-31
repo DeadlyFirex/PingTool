@@ -1,8 +1,8 @@
 import socket
 import threading
 import loguru
+import argparse
 
-from sys import argv
 from typing import Union
 from assets.__init__ import *
 from json import load, dumps
@@ -39,6 +39,11 @@ config = load_config(config_path)[0]
 settings = load_config(config_path)[1]
 thread_pool = ThreadPoolExecutor(thread_name_prefix="Clients-",
                                  max_workers=settings["max_workers"])
+
+parser = argparse.ArgumentParser(description=config["name"])
+parser.add_argument('--ip_address', type=str, help='The IP address to bind the server to')
+parser.add_argument('--port', type=int, help='The port number to bind the server to')
+args = parser.parse_args()
 
 
 class Client:
@@ -151,12 +156,8 @@ json_logger = loguru.logger.add(
     compression="zip"
 )
 
-try:
-    ip_address = str(argv[1])
-    port = int(argv[2])
-except IndexError:
-    ip_address = socket.gethostbyname(socket.gethostname())
-    port = 5001
+ip_address = args.ip_address if args.ip_address else socket.gethostbyname(socket.gethostname())
+port = args.port if args.port else 5001
 
 loguru.logger.info(f"Booting up server on {ip_address}:{port}")
 server.bind((ip_address, port))
