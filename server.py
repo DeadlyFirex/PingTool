@@ -3,7 +3,6 @@ import threading
 import loguru
 import argparse
 
-from typing import Union
 from assets.__init__ import *
 from json import load, dumps
 from secrets import token_hex
@@ -48,11 +47,11 @@ args = parser.parse_args()
 
 class Client:
     @perform_logging(TRACE.name, "Creating user")
-    def __init__(self, name: Union[str, None], address: tuple, connection: socket.socket):
-        self.name: Union[str, None] = name
+    def __init__(self, name: str | None, address: tuple, connection: socket.socket):
+        self.name: str | None = name
         self.address: tuple = address
         self.connection: socket.socket = connection
-        self.thread: Union[threading.Thread, None] = None
+        self.thread: threading.Thread | None = None
 
     @perform_logging(TRACE.name, "Sending message")
     def send(self, message: str):
@@ -70,8 +69,9 @@ class Client:
         self.name = name.split(":")[1].removesuffix("\n")
 
     @perform_logging(TRACE.name, "Disconnecting user")
-    def close_connection(self, reason: Union[str, None] = None):
-        loguru.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
+    def close_connection(self, reason: str | None = None):
+        loguru.logger.warning(f"Manually disconnecting {self.name or 'undefined'} for:"
+                              f" {reason or 'no reason specified'}")
         if self in client_list:
             client_list.remove(self)
         self.connection.close()
@@ -167,7 +167,6 @@ server.listen(15)
 @perform_logging(TRACE.name, "Created new client thread")
 def client_thread(client: Client):
     connection = client.connection
-
     client.send("Connected:?")
 
     while True:
