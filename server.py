@@ -5,6 +5,15 @@ import loguru
 from sys import argv
 from typing import Union
 from assets.__init__ import *
+from json import load, dumps
+from secrets import token_hex
+from concurrent.futures import ThreadPoolExecutor
+from os.path import abspath, dirname, join
+
+server_id = token_hex(8)
+root_path = abspath(dirname(abspath(__file__)))
+config_path = join(root_path, "config.json")
+client_list = []
 
 
 def perform_logging(level: str | int, message: str | None) -> callable:
@@ -14,6 +23,21 @@ def perform_logging(level: str | int, message: str | None) -> callable:
             return f(*args, **kwargs)
         return wrapped_f
     return wrap
+
+
+@perform_logging(TRACE.name, "Loading config.json")
+def load_config(path: str) -> tuple[dict, dict]:
+    with (open(path, "r")) as file:
+        cfg_raw = load(file)
+        cfg_app = cfg_raw["application"]
+        cfg_settings = cfg_raw["settings"]
+    return cfg_app, cfg_settings
+
+
+config = load_config(config_path)[0]
+settings = load_config(config_path)[1]
+thread_pool = ThreadPoolExecutor(thread_name_prefix="Clients-",
+                                 max_workers=settings["max_workers"])
 
 
 class Client:
@@ -205,9 +229,9 @@ while True:
         user = Client(None, addr, conn)
         client_list.append(user)
 
-        thread = threading.Thread(target=client_thread, args=(user,), name=f"Client: {addr[0]}")
-        user.register_thread(thread)
-        user.thread.start()
+        t = thread_pool.submit(client_thread, user)
+        user.register_thread(t)
     except KeyboardInterrupt:
         server.close()
+        thread_pool.shutdown(wait=False)
         exit(0)
