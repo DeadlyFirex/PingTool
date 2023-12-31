@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='PingTool',
-    version='0.8',
+    version='1.0.0',
     url='https://github.com/DeadlyFirex/PingTool',
     license='MIT',
     author='deadly',
