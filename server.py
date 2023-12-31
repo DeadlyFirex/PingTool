@@ -150,7 +150,6 @@ json_logger = loguru.logger.add(
     rotation="20MB",
     compression="zip"
 )
-client_list = list()
 
 try:
     ip_address = str(argv[1])
