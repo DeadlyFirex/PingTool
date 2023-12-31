@@ -7,6 +7,7 @@ from typing import Union
 from assets.__init__ import *
 from json import load, dumps
 from secrets import token_hex
+from utils.singleton import Singleton
 from concurrent.futures import ThreadPoolExecutor
 from os.path import abspath, dirname, join
 
@@ -79,7 +80,7 @@ class Client:
         loguru.logger.log(level, message)
 
 
-class Utilities:
+class Utils(metaclass=Singleton):
     @staticmethod
     @perform_logging(TRACE.name, "Fetching all users")
     def get_all_user_names():
@@ -181,8 +182,8 @@ def client_thread(client: Client):
                         client.log(f"Kicking user for bad verification", ERROR.name)
                         client.send_then_disconnect("Error:?")
                         return
-                    name = Utilities.handle_argument(message)
-                    if Utilities.get_user_by_name(name) is not None:
+                    name = Utils.handle_argument(message)
+                    if Utils.get_user_by_name(name) is not None:
                         client.log(f"Kicking user for existing name", ERROR.name)
                         client.send_then_disconnect("Error:Name")
                         return
@@ -197,10 +198,10 @@ def client_thread(client: Client):
                     client.log(f"Verified user as: {client.name}", INFO.name)
                     client.send(f"Verified:{client.name}")
 
-                match Utilities.strip_argument(message):
+                match Utils.strip_argument(message):
                     case "Ping":
-                        username = Utilities.handle_argument(message)
-                        target = Utilities.get_user_by_name(username)
+                        username = Utils.handle_argument(message)
+                        target = Utils.get_user_by_name(username)
 
                         if target is None:
                             connection.sendall("Error:?\n".encode())
@@ -209,8 +210,8 @@ def client_thread(client: Client):
                             client.send(f"S-Ping:{target.name}")
                             target.send(f"X-Ping:{client.name}")
                     case "Fetch":
-                        result = Utilities.get_all_user_names_raw()
-                        client.log(f"Fetched all users: {result}", INFO.name)
+                        result = Utils.get_all_user_names_raw()
+                        client.log(f"Fetched all users", INFO.name)
                         client.send(f"Users:{result}")
                     case "Settings":
                         client.log(f"Fetched settings", INFO.name)
