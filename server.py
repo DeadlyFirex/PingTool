@@ -64,8 +64,6 @@ class Client:
 
     @perform_logging(TRACE.name, "Verifying user")
     def verify(self, name: str):
-        if name.__len__() > 25:
-            self.send_then_disconnect("Error:?")
         self.name = name.split(":")[1].removesuffix("\n")
 
     @perform_logging(TRACE.name, "Disconnecting user")
