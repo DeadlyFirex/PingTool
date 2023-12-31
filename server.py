@@ -7,7 +7,7 @@ from typing import Union
 from assets.__init__ import *
 
 
-def PerformLogging(level: Union[str, int], message: Union[str, None]):
+def perform_logging(level: str | int, message: str | None) -> callable:
     def wrap(f):
         def wrapped_f(*args, **kwargs):
             loguru.logger.log(level, message or "no message")
@@ -17,47 +17,47 @@ def PerformLogging(level: Union[str, int], message: Union[str, None]):
 
 
 class Client:
-    @PerformLogging(TRACE.name, "Creating user")
+    @perform_logging(TRACE.name, "Creating user")
     def __init__(self, name: Union[str, None], address: tuple, connection: socket.socket):
         self.name: Union[str, None] = name
         self.address: tuple = address
         self.connection: socket.socket = connection
         self.thread: Union[threading.Thread, None] = None
 
-    @PerformLogging(TRACE.name, "Sending message")
+    @perform_logging(TRACE.name, "Sending message")
     def send(self, message: str):
         self.connection.sendall(message.__add__("\n").encode("utf-8"))
 
-    @PerformLogging(TRACE.name, "Sending message, then disconnecting")
+    @perform_logging(TRACE.name, "Sending message, then disconnecting")
     def send_then_disconnect(self, message: str):
         self.connection.sendall(message.__add__("\n").encode("utf-8"))
         self.close_connection()
 
-    @PerformLogging(TRACE.name, "Verifying user")
+    @perform_logging(TRACE.name, "Verifying user")
     def verify(self, name: str):
         if name.__len__() > 25:
             self.send_then_disconnect("Error:?")
         self.name = name.split(":")[1].removesuffix("\n")
 
-    @PerformLogging(TRACE.name, "Disconnecting user")
+    @perform_logging(TRACE.name, "Disconnecting user")
     def close_connection(self, reason: Union[str, None] = None):
         loguru.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
         if self in client_list:
             client_list.remove(self)
         self.connection.close()
 
-    @PerformLogging(TRACE.name, "Registering thread to client")
+    @perform_logging(TRACE.name, "Registering thread to client")
     def register_thread(self, thread_address: threading.Thread):
         self.thread = thread_address
 
-    @PerformLogging(TRACE.name, "Logging message")
-    def log(self, message: Union[str, None], level: Union[str, int] = DEBUG.name):
+    @perform_logging(TRACE.name, "Logging message")
+    def log(self, message: str | None, level: str | int = DEBUG.name):
         loguru.logger.log(level, message)
 
 
 class Utilities:
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching all users")
+    @perform_logging(TRACE.name, "Fetching all users")
     def get_all_user_names():
         result = list()
 
@@ -68,7 +68,7 @@ class Utilities:
         return result or None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Raw-fetching all users")
+    @perform_logging(TRACE.name, "Raw-fetching all users")
     def get_all_user_names_raw():
         result = str()
 
@@ -83,7 +83,7 @@ class Utilities:
         return result or None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching user by name")
+    @perform_logging(TRACE.name, "Fetching user by name")
     def get_user_by_name(name: str):
         for client in client_list:
             if client.name == name:
@@ -91,7 +91,7 @@ class Utilities:
         return None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Fetching user by address")
+    @perform_logging(TRACE.name, "Fetching user by address")
     def get_user_by_address(address: str):
         for client in client_list:
             if client.address == address:
@@ -99,12 +99,12 @@ class Utilities:
         return None
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Parsing argument")
+    @perform_logging(TRACE.name, "Parsing argument")
     def handle_argument(message: str, delimiter: str = ":"):
         return message.split(delimiter)[1].removesuffix("\n")
 
     @staticmethod
-    @PerformLogging(TRACE.name, "Parsing command")
+    @perform_logging(TRACE.name, "Parsing command")
     def strip_argument(message: str, delimiter: str = ":"):
         return message.split(delimiter)[0].removesuffix("\n")
 
@@ -139,7 +139,7 @@ server.bind((ip_address, port))
 server.listen(15)
 
 
-@PerformLogging(TRACE.name, "Created new client thread")
+@perform_logging(TRACE.name, "Created new client thread")
 def client_thread(client: Client):
     connection = client.connection
 
