@@ -1,0 +1,11 @@
+{
+  "application": {
+    "name": "pingtool-server",
+    "version": "1.0.0"
+  },
+  "settings": {
+    "max_workers": 16,
+    "username_min_length": 3,
+    "username_max_length": 20
+  }
+}
