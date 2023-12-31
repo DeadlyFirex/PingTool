@@ -186,6 +186,13 @@ def client_thread(client: Client):
                         client.log(f"Kicking user for existing name", ERROR.name)
                         client.send_then_disconnect("Error:Name")
                         return
+                    if name is None or name == "":
+                        client.log(f"Kicking user for bad naming", ERROR.name)
+                        client.send_then_disconnect("Error:?")
+                        return
+                    if not settings["username_min_length"] < name.__len__() < settings["username_max_length"]:
+                        client.send_then_disconnect(f"Error:{settings['username_min_length']}/"
+                                                    f"{settings['username_max_length']}={name.__len__()}")
                     client.name = name
                     client.log(f"Verified user as: {client.name}", INFO.name)
                     client.send(f"Verified:{client.name}")
@@ -205,6 +212,12 @@ def client_thread(client: Client):
                         result = Utilities.get_all_user_names_raw()
                         client.log(f"Fetched all users: {result}", INFO.name)
                         client.send(f"Users:{result}")
+                    case "Settings":
+                        client.log(f"Fetched settings", INFO.name)
+                        client.send(f"Settings:{dumps(config)}")
+                    case "Id":
+                        client.log(f"Fetched server id", INFO.name)
+                        client.send(f"Id:{server_id}")
                     case "Exit":
                         client.send_then_disconnect("Bye:?")
                         return
