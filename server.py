@@ -1,171 +1,56 @@
 import socket
-import threading
 import loguru
 import argparse
 
 from assets.__init__ import *
-from json import load, dumps
+from utils.helpers import Utils, perform_logging, load_config, client_list
+from models.client import Client
+
+from json import dumps
 from secrets import token_hex
-from utils.singleton import Singleton
 from concurrent.futures import ThreadPoolExecutor
 from os.path import abspath, dirname, join
 
-server_id = token_hex(8)
+# Setup variables
+app_id = token_hex(8)
 root_path = abspath(dirname(abspath(__file__)))
-config_path = join(root_path, "config.json")
-client_list = []
+cfg_path = join(root_path, "config.json")
 
+# Load config / logging
+cfg = load_config(cfg_path)
+app_config, app_settings, app_logging = (
+    cfg.get("application"), cfg.get("settings"), cfg.get("logging"))
+app_logger = loguru.logger.add(
+    sink=app_logging.get("path"),
+    level=app_logging.get("level"),
+    rotation=app_logging.get("rotation"),
+    compression=app_logging.get("compression")
+)
 
-def perform_logging(level: str | int, message: str | None) -> callable:
-    def wrap(f):
-        def wrapped_f(*args, **kwargs):
-            loguru.logger.log(level, message or "no message")
-            return f(*args, **kwargs)
-        return wrapped_f
-    return wrap
-
-
-@perform_logging(TRACE.name, "Loading config.json")
-def load_config(path: str) -> tuple[dict, dict]:
-    with (open(path, "r")) as file:
-        cfg_raw = load(file)
-        cfg_app = cfg_raw["application"]
-        cfg_settings = cfg_raw["settings"]
-    return cfg_app, cfg_settings
-
-
-config = load_config(config_path)[0]
-settings = load_config(config_path)[1]
-thread_pool = ThreadPoolExecutor(thread_name_prefix="Clients-",
-                                 max_workers=settings["max_workers"])
-
-parser = argparse.ArgumentParser(description=config["name"])
-parser.add_argument('--ip_address', type=str, help='The IP address to bind the server to')
+# Setup command line arguments
+parser = argparse.ArgumentParser(description=app_config["name"])
+parser.add_argument('--host', type=str, help='The host to bind the server to')
 parser.add_argument('--port', type=int, help='The port number to bind the server to')
 args = parser.parse_args()
 
-
-class Client:
-    @perform_logging(TRACE.name, "Creating user")
-    def __init__(self, name: str | None, address: tuple, connection: socket.socket):
-        self.name: str | None = name
-        self.address: tuple = address
-        self.connection: socket.socket = connection
-        self.thread: threading.Thread | None = None
-
-    @perform_logging(TRACE.name, "Sending message")
-    def send(self, message: str):
-        self.connection.sendall(message.__add__("\n").encode("utf-8"))
-
-    @perform_logging(TRACE.name, "Sending message, then disconnecting")
-    def send_then_disconnect(self, message: str):
-        self.connection.sendall(message.__add__("\n").encode("utf-8"))
-        self.close_connection()
-
-    @perform_logging(TRACE.name, "Verifying user")
-    def verify(self, name: str):
-        self.name = name.split(":")[1].removesuffix("\n")
-
-    @perform_logging(TRACE.name, "Disconnecting user")
-    def close_connection(self, reason: str | None = None):
-        loguru.logger.warning(f"Manually disconnecting {self.name or 'undefined'} for:"
-                              f" {reason or 'no reason specified'}")
-        if self in client_list:
-            client_list.remove(self)
-        self.connection.close()
-
-    @perform_logging(TRACE.name, "Registering thread to client")
-    def register_thread(self, thread_address: threading.Thread):
-        self.thread = thread_address
-
-    @perform_logging(TRACE.name, "Logging message")
-    def log(self, message: str | None, level: str | int = DEBUG.name):
-        loguru.logger.log(level, message)
-
-
-class Utils(metaclass=Singleton):
-    @staticmethod
-    @perform_logging(TRACE.name, "Fetching all users")
-    def get_all_user_names():
-        result = list()
-
-        for client in client_list:
-            if client.name is None:
-                continue
-            result.append(client.name)
-        return result or None
-
-    @staticmethod
-    @perform_logging(TRACE.name, "Raw-fetching all users")
-    def get_all_user_names_raw():
-        result = str()
-
-        for client in client_list:
-            if client.name is None:
-                continue
-            if result == str():
-                result = result.__add__(client.name)
-            else:
-                result = result.__add__(f",{client.name}")
-
-        return result or None
-
-    @staticmethod
-    @perform_logging(TRACE.name, "Fetching user by name")
-    def get_user_by_name(name: str):
-        for client in client_list:
-            if client.name == name:
-                return client
-        return None
-
-    @staticmethod
-    @perform_logging(TRACE.name, "Fetching user by address")
-    def get_user_by_address(address: str):
-        for client in client_list:
-            if client.address == address:
-                return client
-        return None
-
-    @staticmethod
-    @perform_logging(TRACE.name, "Parsing argument")
-    def handle_argument(message: str, delimiter: str = ":"):
-        return message.split(delimiter)[1].removesuffix("\n")
-
-    @staticmethod
-    @perform_logging(TRACE.name, "Parsing command")
-    def strip_argument(message: str, delimiter: str = ":"):
-        return message.split(delimiter)[0].removesuffix("\n")
-
-
+# Setup threading and server
+thread_pool = ThreadPoolExecutor(thread_name_prefix="Clients-", max_workers=app_settings["max_workers"])
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-file_logger = loguru.logger.add(
-    sink="logs/main.log",
-    level="TRACE",
-    rotation="15MB",
-    compression="zip"
-)
-json_logger = loguru.logger.add(
-    sink="logs/main.json",
-    level="TRACE",
-    serialize=True,
-    rotation="20MB",
-    compression="zip"
-)
+host = args.host if args.host else socket.gethostbyname(socket.gethostname())
+port = args.port if args.port else 12500
 
-ip_address = args.ip_address if args.ip_address else socket.gethostbyname(socket.gethostname())
-port = args.port if args.port else 5001
 
-loguru.logger.info(f"Booting up server on {ip_address}:{port}")
-server.bind((ip_address, port))
+loguru.logger.info(f"Booting up server on {host}:{port}")
+server.bind((host, port))
 server.listen(15)
 
 
 @perform_logging(TRACE.name, "Created new client thread")
 def client_thread(client: Client):
     connection = client.connection
-    client.send("Connected:?")
+    client.send(f"Connected:{dumps(cfg)}")
 
     while True:
         try:
@@ -188,9 +73,9 @@ def client_thread(client: Client):
                         client.log(f"Kicking user for bad naming", ERROR.name)
                         client.send_then_disconnect("Error:?")
                         return
-                    if not settings["username_min_length"] < name.__len__() < settings["username_max_length"]:
-                        client.send_then_disconnect(f"Error:{settings['username_min_length']}/"
-                                                    f"{settings['username_max_length']}={name.__len__()}")
+                    if not app_settings["username_min_length"] < name.__len__() < app_settings["username_max_length"]:
+                        client.send_then_disconnect(f"Error:{app_settings['username_min_length']}/"
+                                                    f"{app_settings['username_max_length']}={name.__len__()}")
                     client.name = name
                     client.log(f"Verified user as: {client.name}", INFO.name)
                     client.send(f"Verified:{client.name}")
@@ -212,10 +97,10 @@ def client_thread(client: Client):
                         client.send(f"Users:{result}")
                     case "Settings":
                         client.log(f"Fetched settings", INFO.name)
-                        client.send(f"Settings:{dumps(config)}")
+                        client.send(f"Settings:{dumps(cfg)}")
                     case "Id":
                         client.log(f"Fetched server id", INFO.name)
-                        client.send(f"Id:{server_id}")
+                        client.send(f"Id:{app_id}")
                     case "Exit":
                         client.send_then_disconnect("Bye:?")
                         return
