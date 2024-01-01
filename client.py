@@ -75,6 +75,7 @@ parser = argparse.ArgumentParser(description="Application to demonstrate PingToo
 parser.add_argument('--host', type=str, help='The host to bind the server to')
 parser.add_argument('--port', type=int, help='The port number to bind the server to')
 parser.add_argument('--name', type=str, help='The name to connect with')
+parser.add_argument('--test', type=bool, help='Ignore input and attempt connecting')
 args = parser.parse_args()
 
 # Setup connection
@@ -98,6 +99,10 @@ try:
         loguru.logger.success(f"Successfully verified using name: {connection.name}")
 
     while True:
+        if args.test:
+            connection.send_then_disconnect("Fetch")
+            exit(0)
+
         read_sockets, write_socket, error_socket = select(input_list, [], [])
 
         for socks in read_sockets:
