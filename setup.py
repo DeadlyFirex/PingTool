@@ -3,6 +3,9 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+with open('requirements.txt', 'r') as req:
+    requirements = [i.strip() for i in req.readlines()]
+
 setup(
     name='PingTool',
     version='1.0.0',
@@ -25,8 +28,6 @@ setup(
         "License :: OSI Approved :: GNU AGPLv3 License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "loguru"
-    ],
+    install_requires=requirements,
     python_requires=">=3.10",
 )
