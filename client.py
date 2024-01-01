@@ -106,7 +106,9 @@ try:
                 print(f"<Server> {message}")
 
                 if message.__contains__("X-Ping"):
-                    playsound("assets/beep.mp3")
+                    if playsound is None:
+                        loguru.logger.success("Pinged!")
+                    else: playsound("assets/beep.mp3")
             else:
                 message = stdin.readline()
                 connection.send(message)
