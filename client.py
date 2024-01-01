@@ -2,12 +2,17 @@ import socket
 import loguru
 import argparse
 
-from playsound import playsound
 from select import select
 from secrets import token_hex
 from sys import stdin, stdout
 from typing import Union
 from json import loads
+
+try:
+    from playsound import playsound
+except ImportError:
+    loguru.logger.warning("Failed to import playsound, will not play sound on ping")
+    playsound = None
 
 
 class Connection:
