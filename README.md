@@ -1,5 +1,10 @@
-[![Python package](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml/badge.svg)](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml)
-[![wakatime](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4.svg)](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4)
+![GitHub release](https://img.shields.io/github/v/release/DeadlyFirex/PingTool)
+![Python package](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml/badge.svg)
+![wakatime](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4.svg)
+![GitHub License](https://img.shields.io/github/license/DeadlyFirex/PingTool)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/DeadlyFirex/PingTool/main)
+![GitHub repo size](https://img.shields.io/github/repo-size/DeadlyFirex/PingTool)
+
 ## PingTool
 Small application written in Python, socket-based. to ping annoying colleague's who won't respond.\
 Made to refresh Python knowledge, and for anyone who has annoying colleague's who won't respond to your messages.
