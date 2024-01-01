@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Run and test project
+name: Run project
 
 on:
   push:
@@ -40,6 +40,7 @@ jobs:
     - name: Test with pytest
       run: |
         pytest || exit $(( $? == 5 ? 0 : $? ))
-    - name: Test running with python
+    - name: Attempt running server
       run: |
         timeout 15 python server.py --host 127.0.0.1 --port 12500 || exit $(( $? == 124 ? 0 : $? ))
+        timeout 15 python client.py --host 127.0.0.1 --port 12500 || exit $(( $? == 124 ? 0 : $? ))    
