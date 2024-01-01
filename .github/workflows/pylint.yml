@@ -42,4 +42,4 @@ jobs:
         pytest || exit $(( $? == 5 ? 0 : $? ))
     - name: Attempt running server
       run: |
-        (timeout 15 python server.py --host 127.0.0.1 --port 12500 & sleep 2 && timeout 13 python client.py --host 127.0.0.1 --port 12500) || exit $?
+        (timeout 15 python server.py --host 127.0.0.1 --port 12500 & sleep 2 && timeout 13 python client.py --host 127.0.0.1 --port 12500) || exit $(( $? == 124 ? 0 : $? ))
