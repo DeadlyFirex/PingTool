@@ -1,0 +1,17 @@
+# Directories
+.git/
+.github/
+.idea/
+logs/
+
+# Ignore all pycache directories
+**/__pycache__/
+
+# Individual files
+README.md
+LICENSE
+SECURITY.md
+CODE_OF_CONDUCT.md
+.gitignore
+client.py
+setup.py
