@@ -1,48 +1,61 @@
+## PingTool
+> Lightweight socket application, built to ping annoying colleagues who won't respond.
+
 ![GitHub release](https://img.shields.io/github/v/release/DeadlyFirex/PingTool)
 ![Python package](https://github.com/DeadlyFirex/PingTool/actions/workflows/pylint.yml/badge.svg)
 ![wakatime](https://wakatime.com/badge/user/a56c956d-565b-4ddd-a43e-fb7d155c4232/project/e919eb0d-9447-46a2-a32f-107ff8f939c4.svg)
 ![GitHub License](https://img.shields.io/github/license/DeadlyFirex/PingTool)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/DeadlyFirex/PingTool/main)
 ![GitHub repo size](https://img.shields.io/github/repo-size/DeadlyFirex/PingTool)
+![PyPI - License](https://img.shields.io/pypi/l/PingTool?label=PyPi%20License)
+![PyPI - Format](https://img.shields.io/pypi/format/PingTool)
+![PyPI - Implementation](https://img.shields.io/pypi/implementation/PingTool)
+![PyPI - Version](https://img.shields.io/pypi/v/PingTool)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/PingTool)
 
-## PingTool
-Small application written in Python, socket-based. to ping annoying colleague's who won't respond.\
-Made to refresh Python knowledge, and for anyone who has annoying colleague's who won't respond to your messages.
+PingTool is an application with a client / server implementation that allows you to ping other users. \
+This project aims to demonstrate modern socket and threading capabilities in a Python format.
 
-## Usage
-Program uses basic Python `sockets`.\
-Works by sending and receiving specific commands.
+## Features
+- Lightweight client / server implementation.
+- Simple command system.
+- Argument parsing.
+- Logging system.
+- Configurable settings.
+- Multithreading server for multiple connections.
+- Threaded client for sending and receiving data.
+- Easy to use command system.
 
-All responses and commands are sent following a static format, `cmd:arg`, 
-for example,`Name:Deadly` to verify user on connection, 
-command with required argument`Exit:?` to disconnect, argument is not parsed, but required to fit format.
+## Installation
+You can install and update the project through PyPi;
+```bash
+$ pip install PingTool
+```
+Optionally, you can install and run manually by pulling from the latest 
+[release](https://github.com/DeadlyFirex/PingTool/releases/latest)
+1. Run the `client` by running `python client.py` 
+2. The `server` is executable via `python server.py`
+3. Configuration is done via `config.json` and arguments.
 
-This also goes for responses, whomst follow the same format.\
-Sending an end-line is recommended, but not required.\
-Send data in bytes, encode using UTF-8, soon configurable.
+## Description
+Program makes use of built-in the Python `sockets` library. \
+Server accepts commands, by sending and receiving specific commands.
 
-## Commandlist
-#### Manual
-- Name <sub>(used to confirm name)</sub>
-- Fetch <sub>(fetch all users)</sub>
-- Ping <sub>(ping a different user)</sub>
-- Exit <sub>(disconnect gracefully)</sub>
-#### Automatic
-- S-Ping <sub>(confirms sent ping)</sub>
-- X-Ping <sub>(sent to pinged user)</sub>
-#### Responses
-- Error <sub>(indicates bad request)</sub>
-- Connected <sub>(indicates successful connection)</sub>
-- Bye <sub>(indicates successful disconnect)</sub>
+All responses and commands are sent following a static format, `cmd:arg`. \
+This also goes for responses, which follow the same format.
 
-## Function
-1. Connect to the server.
-2. Login to the server using the `Name` command.
-3. You can now use any command.
-4. Disconnect by using `Exit`.
+Sending an end-line is recommended, but not required. \
+Data is sent in `utf-8` encoded bytes.
 
-## Technical Details
-Server uses the built-in `sockets` to create a IPv4 socket, on the TCP protocol.
+## Configuration
+The server makes use of `config.json` for configuration. \
+Furthermore, both client and server make use arguments for runtime configuration.
 
-## Libraries
+Make use of `--help` or `-h` to see all available arguments.
+
+## Details
+For more information, see the [wiki](https://github.com/DeadlyFirex/PingTool/wiki)
+
+## Dependencies
+Credits go to these awesome projects for making this possible!
 - [loguru](https://github.com/Delgan/loguru)
