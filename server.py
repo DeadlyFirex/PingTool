@@ -3,7 +3,7 @@ import loguru
 import argparse
 
 from assets.__init__ import *
-from utils.helpers import Utils, perform_logging, load_config, client_list
+from utils.helpers import Utils, perform_logging, load_config, client_list, clean_message
 from models.client import Client
 
 from json import dumps
@@ -54,9 +54,7 @@ def client_thread(client: Client):
 
     while True:
         try:
-            message = connection.recv(2048).decode("utf-8") \
-                .removeprefix("\n") \
-                .removesuffix("\n")
+            message = clean_message(connection.recv(2048))
 
             if message:
                 if client.name is None:

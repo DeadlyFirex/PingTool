@@ -17,6 +17,18 @@ def perform_logging(level: str | int, message: str | None) -> callable:
     return wrap
 
 
+def clean_message(message: bytes) -> str:
+    """
+    Cleans a socket received message.
+    :param message: Bytes from connection
+    :return: Message (clean)
+    """
+    return (message
+            .decode("utf-8")
+            .removeprefix("\n")
+            .removesuffix("\n"))
+
+
 @perform_logging(TRACE.name, "Loading config.json")
 def load_config(path: str) -> dict:
     with (open(path, "r")) as file:

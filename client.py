@@ -2,6 +2,8 @@ import socket
 import loguru
 import argparse
 
+from utils.helpers import clean_message
+
 from select import select
 from secrets import token_hex
 from sys import stdin, stdout
@@ -22,11 +24,9 @@ class Connection:
         self.connection: socket.socket = connection
 
         connection.connect(address)
-        self.config: dict | None = loads(self.connection.recv(2048)
-                                         .decode("utf-8")
-                                         .removeprefix("\n")
-                                         .removesuffix("\n")
-                                         .removeprefix("Connected:"))
+        self.config: dict | None = loads(clean_message(
+            self.connection.recv(2048)
+        ).removeprefix("Connected:"))
 
     def send(self, message: str):
         self.connection.sendall(message.__add__("\n").encode("utf-8"))
@@ -45,9 +45,6 @@ class Connection:
             raise ValueError("Name length is invalid")
         self.name = name
         self.send(f"Name:{name}")
-
-    def get_config(self):
-        pass
 
     def disconnect(self, reason: Union[str, None] = None):
         loguru.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
@@ -93,7 +90,7 @@ try:
     connection = Connection(None, (host, port), conn)
     connection.verify(name)
 
-    data = conn.recv(10024).decode('utf-8').removeprefix('\n').removesuffix('\n')
+    data = clean_message(conn.recv(10024))
 
     if data.__contains__("Verified"):
         loguru.logger.success(f"Successfully verified using name: {connection.name}")
@@ -107,7 +104,7 @@ try:
 
         for socks in read_sockets:
             if socks == conn:
-                message = socks.recv(2048).decode('utf-8').removeprefix('\n').removesuffix('\n')
+                message = clean_message(socks.recv(2048))
                 print(f"<Server> {message}")
 
                 if message.__contains__("X-Ping"):
