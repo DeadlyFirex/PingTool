@@ -2,13 +2,13 @@ import socket
 import loguru
 import argparse
 
-from utils.helpers import clean_message
+from models.connection import Connection
+from utils.helpers import clean_message, handle_message
 
 from select import select
 from secrets import token_hex
 from sys import stdin, stdout
-from typing import Union
-from json import loads
+from os.path import isfile
 
 try:
     from playsound import playsound
@@ -16,53 +16,10 @@ except ImportError:
     loguru.logger.warning("Failed to import playsound, will not play sound on ping")
     playsound = None
 
-
-class Connection:
-    def __init__(self, name: str | None, address: tuple, connection: socket.socket):
-        self.name: str | None = name
-        self.address: tuple = address
-        self.connection: socket.socket = connection
-
-        connection.connect(address)
-        self.config: dict | None = loads(clean_message(
-            self.connection.recv(2048)
-        ).removeprefix("Connected:"))
-
-    def send(self, message: str):
-        self.connection.sendall(message.__add__("\n").encode("utf-8"))
-
-    def send_then_disconnect(self, message: str):
-        self.connection.sendall(message.__add__("\n").encode("utf-8"))
-        self.disconnect()
-
-    def verify(self, name: str):
-        min_len, max_len = (self.config.get("settings").get("username_min_length"),
-                            self.config.get("settings").get("username_max_length"))
-
-        if name is None or name == "":
-            raise ValueError("Name cannot be empty")
-        if min_len > name.__len__() > max_len:
-            raise ValueError("Name length is invalid")
-        self.name = name
-        self.send(f"Name:{name}")
-
-    def disconnect(self, reason: Union[str, None] = None):
-        loguru.logger.warning(f"Manually disconnecting {self.name} for: {reason or 'no reason specified'}")
-        self.connection.close()
-
-    @staticmethod
-    def handle_argument(message: str, delimiter: str = ":"):
-        return message.split(delimiter)[1].removesuffix("\n")
-
-    @staticmethod
-    def strip_argument(message: str, delimiter: str = ":"):
-        return message.split(delimiter)[0].removesuffix("\n")
-
-
 # Setup logger
 app_logger = loguru.logger.add(
     sink="logs/client.log",
-    level="TRACE",
+    level="INFO",
     rotation="15MB",
     compression="zip"
 )
@@ -72,6 +29,7 @@ parser = argparse.ArgumentParser(description="Application to demonstrate PingToo
 parser.add_argument('--host', type=str, help='The host to bind the server to')
 parser.add_argument('--port', type=int, help='The port number to bind the server to')
 parser.add_argument('--name', type=str, help='The name to connect with')
+parser.add_argument('--file', type=str, help='Path to ping audio file')
 parser.add_argument('--test', type=bool, help='Ignore input and attempt connecting')
 args = parser.parse_args()
 
@@ -84,33 +42,55 @@ port = args.port if args.port else 12500
 name = args.name if args.name else token_hex(6)
 input_list = [stdin, conn]
 
+if args.file is not None and not isfile(args.file):
+    raise FileNotFoundError(f"File {args.file} does not exist")
 loguru.logger.info(f"Booting client, setting to connect to {host}:{port}")
 
 try:
-    connection = Connection(None, (host, port), conn)
-    connection.verify(name)
+    connection: Connection = Connection(None, (host, port), conn)
+    min_len, max_len = (connection.config.get("settings").get("username_min_length"),
+                        connection.config.get("settings").get("username_max_length"))
 
-    data = clean_message(conn.recv(10024))
+    if name in [None, ""]:
+        raise ValueError("Name cannot be empty")
+    if min_len > name.__len__() > max_len:
+        raise ValueError("Name length is invalid")
 
-    if data.__contains__("Verified"):
+    connection.send(f"Name:{name}")
+    command, argument = handle_message(
+        clean_message(
+            conn.recv(2048)
+        ))
+
+    if command == "Verified":
+        connection.name = name
         loguru.logger.success(f"Successfully verified using name: {connection.name}")
+    else:
+        loguru.logger.error(f"Failed to verify using name: {connection.name}")
+        raise ConnectionError("Failed to verify")
 
     while True:
         if args.test:
-            connection.send_then_disconnect("Fetch")
+            loguru.logger.info("Sending test message")
+            connection.send_then_disconnect("Fetch:")
             exit(0)
 
         read_sockets, write_socket, error_socket = select(input_list, [], [])
 
         for socks in read_sockets:
             if socks == conn:
-                message = clean_message(socks.recv(2048))
-                print(f"<Server> {message}")
+                command, argument = handle_message(
+                    clean_message(
+                        conn.recv(2048)
+                    ))
 
-                if message.__contains__("X-Ping"):
+                stdout.write(f"<Server> {command}:{argument}\n")
+
+                if command == "X-Ping":
                     if playsound is None:
                         loguru.logger.success("Pinged!")
-                    else: playsound("assets/beep.mp3")
+                    else:
+                        playsound(args.file)
             else:
                 message = stdin.readline()
                 connection.send(message)
@@ -118,6 +98,7 @@ try:
                 stdout.flush()
 
 except KeyboardInterrupt:
+    loguru.logger.warning(f"Manually disconnecting")
     connection.disconnect()
     exit(0)
 except ConnectionRefusedError:
