@@ -71,7 +71,7 @@ try:
 
     while True:
         if args.test:
-            loguru.logger.info("Sending test message")
+            loguru.logger.info("Sending test message, due to --test flag")
             connection.send_then_disconnect("Fetch:")
             exit(0)
 
