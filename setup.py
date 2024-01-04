@@ -24,9 +24,10 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Natural Language :: English",
+        "Topic :: Utilities",
     ],
     install_requires=[
         "loguru>=0.7.0",
