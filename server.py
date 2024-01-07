@@ -13,10 +13,10 @@ from json import dumps
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
 
-
 # Setup variables
 client_list: List[Client] = []
 app_id: str = token_hex(8)
+secret_key: str = token_hex(16)
 root_path: str = abspath(dirname(abspath(__file__)))
 cfg_path: str = join(root_path, "config.json")
 
@@ -45,8 +45,9 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 host: str = args.host if args.host else socket.gethostbyname(socket.gethostname())
 port: int = args.port if args.port else 12500
 
-
 loguru.logger.info(f"Booting up server on {host}:{port}")
+loguru.logger.info(f"Identifier: ({app_id})")
+loguru.logger.info(f"Secret: ({secret_key})")
 server.bind((host, port))
 server.listen(15)
 
@@ -102,13 +103,8 @@ def client_thread(client: Client):
                     client.send_then_disconnect("Bye:?")
                     return
                 case "Name":
-                    name = get_client_by_name(client_list, argument).name
-                    if name is not None:
-                        client.log(f"Fetched name of {argument}", INFO.name)
-                        client.send(f"Name:{name}")
-                    else:
-                        client.log(f"Failed to fetch name of {argument}", WARNING.name)
-                        client.send(f"Error:?")
+                    client.log(f"Fetched name of {argument}", INFO.name)
+                    client.send(f"Name:{client.name}")
                 case _:
                     client.log(f"Unknown command: {command or 'none'}", WARNING.name)
                     client.send("Error:?")
