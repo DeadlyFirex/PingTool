@@ -102,7 +102,13 @@ def client_thread(client: Client):
                     client.send_then_disconnect("Bye:?")
                     return
                 case "Name":
-                    pass
+                    name = get_client_by_name(client_list, argument).name
+                    if name is not None:
+                        client.log(f"Fetched name of {argument}", INFO.name)
+                        client.send(f"Name:{name}")
+                    else:
+                        client.log(f"Failed to fetch name of {argument}", WARNING.name)
+                        client.send(f"Error:?")
                 case _:
                     client.log(f"Unknown command: {command or 'none'}", WARNING.name)
                     client.send("Error:?")
