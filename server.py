@@ -93,6 +93,14 @@ def client_thread(client: Client):
                 case "Fetch":
                     client.log(f"Fetched all users", INFO.name)
                     client.send(f"Users:{get_all_clients(client_list, True)}")
+                case "Login":
+                    if argument == secret_key:
+                        client.admin = True
+                        client.log(f"Successfully logged in as admin", INFO.name)
+                        client.send(f"Login:True")
+                    else:
+                        client.log(f"Failed to login as admin", WARNING.name)
+                        client.send(f"Error:?")
                 case "Settings":
                     client.log(f"Fetched settings", INFO.name)
                     client.send(f"Settings:{dumps(cfg)}")
