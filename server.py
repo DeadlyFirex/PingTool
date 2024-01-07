@@ -107,7 +107,7 @@ def client_thread(client: Client):
                     client.log(f"Received none", WARNING.name)
                     client.send("Error:?")
                 case _:
-                    client.log(f"Unknown command: {command}", WARNING.name)
+                    client.log(f"Unknown command: {command or 'none'}", WARNING.name)
                     client.send("Error:?")
 
         except Exception as e:
