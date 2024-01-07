@@ -23,6 +23,7 @@ class Client:
         self.name: Union[str, None] = name
         self.address: tuple = address
         self.connection: socket = connection
+        self.admin: bool = False
         self.thread: Union[Thread, None] = None
 
     @perform_logging(TRACE.name, "Sending message to client")
