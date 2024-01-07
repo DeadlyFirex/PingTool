@@ -71,7 +71,6 @@ def client_thread(client: Client):
 
     client.name = argument
     client.log(f"Verified user as: {client.name}", INFO.name)
-    client.send(f"Verified:{client.name}")
 
     while True:
         try:
